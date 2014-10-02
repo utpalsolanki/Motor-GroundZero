@@ -5,7 +5,7 @@ int RECV_PIN = 6;
 int RELAY_PIN = 10;
 int minit;
 int second;
-int Buzzer = 9;
+int BUZZER = 9;
 
 IRrecv irrecv(RECV_PIN);
 decode_results results;
@@ -16,9 +16,9 @@ void setup()
 {
   pinMode(RELAY_PIN, OUTPUT);
   pinMode(13, OUTPUT);
-  pinMode(Buzzer,OUTPUT);
+  pinMode(BUZZER,OUTPUT);
   digitalWrite(10,HIGH);
-  digitalWrite(Buzzer,HIGH);
+  digitalWrite(BUZZER,HIGH);
   delay(500);
   
   irrecv.enableIRIn(); // Start the receiver
@@ -46,9 +46,9 @@ void loop() {
       minit++;
       time_display();
       delay(100);
-      digitalWrite(Buzzer,LOW);
+      digitalWrite(BUZZER,LOW);
       delay(50);
-      digitalWrite(Buzzer,HIGH);
+      digitalWrite(BUZZER,HIGH);
       
       irrecv.resume();
     }
@@ -56,9 +56,9 @@ void loop() {
       minit--;
       time_display();
       delay(100);
-      digitalWrite(Buzzer,LOW);
+      digitalWrite(BUZZER,LOW);
       delay(50);
-      digitalWrite(Buzzer,HIGH);
+      digitalWrite(BUZZER,HIGH);
       
       irrecv.resume();
     }
@@ -100,24 +100,24 @@ void motor(){
   lcd.setCursor(0, 1);
   lcd.print("within a moment");
   delay(1000);
-  digitalWrite(Buzzer,LOW);
+  digitalWrite(BUZZER,LOW);
   delay(200);
-  digitalWrite(Buzzer,HIGH);
+  digitalWrite(BUZZER,HIGH);
   delay(800);
   
-  digitalWrite(Buzzer,LOW);
+  digitalWrite(BUZZER,LOW);
   delay(200);
-  digitalWrite(Buzzer,HIGH);
+  digitalWrite(BUZZER,HIGH);
   delay(800);
   
-  digitalWrite(Buzzer,LOW);
+  digitalWrite(BUZZER,LOW);
   delay(200);
-  digitalWrite(Buzzer,HIGH);
+  digitalWrite(BUZZER,HIGH);
   delay(800);
   
-  digitalWrite(Buzzer,LOW);
+  digitalWrite(BUZZER,LOW);
   delay(200);
-  digitalWrite(Buzzer,HIGH);
+  digitalWrite(BUZZER,HIGH);
   
       
   
@@ -144,9 +144,9 @@ void motor(){
           delay(1000);
           }
           else{
-              digitalWrite(Buzzer,LOW);
+              digitalWrite(BUZZER,LOW);
               delay(500);
-              digitalWrite(Buzzer,HIGH);
+              digitalWrite(BUZZER,HIGH);
               delay(500);     
           }      
         }
@@ -158,9 +158,9 @@ void motor(){
     burst();
     lcd.clear();
     lcd.print("Motor off");
-    digitalWrite(Buzzer,LOW);
+    digitalWrite(BUZZER,LOW);
               delay(2000);
-              digitalWrite(Buzzer,HIGH);
+              digitalWrite(BUZZER,HIGH);
               
     delay(6000);
     
