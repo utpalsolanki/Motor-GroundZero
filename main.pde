@@ -14,6 +14,8 @@ LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 void setup()
 {
+  Serial.begin(9600);
+  
   pinMode(RELAY_PIN, OUTPUT);
   pinMode(13, OUTPUT);
   pinMode(BUZZER,OUTPUT);
@@ -32,6 +34,8 @@ void setup()
   minit=0;
   second=0;
   time_display();
+  
+  Serial.println("System started");
 }
 
 int on = 0;
@@ -88,6 +92,9 @@ void time_display_running(){
   lcd.print(second);
   lcd.setCursor(0, 1);
   lcd.print("time left");
+  
+  Serial.println("%d:%d left",minit,second);
+  
 }
 
 void motor(){
@@ -97,6 +104,7 @@ void motor(){
   
   lcd.clear();
   lcd.print("Motor will start");
+  Serial.println("Motor will start within a moment");
   lcd.setCursor(0, 1);
   lcd.print("within a moment");
   delay(1000);
@@ -123,6 +131,8 @@ void motor(){
   
   digitalWrite(10,LOW);  // motor is now On , relay on
   delay(500);
+  
+  Serial.println("Motor is now ON");
   
   m1=minit-1;  // copying time value
   s1=second;
@@ -158,6 +168,9 @@ void motor(){
     burst();
     lcd.clear();
     lcd.print("Motor off");
+    
+    Serial.println("Motor OFF");
+    
     digitalWrite(BUZZER,LOW);
               delay(2000);
               digitalWrite(BUZZER,HIGH);
