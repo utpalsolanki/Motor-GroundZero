@@ -25,9 +25,9 @@ SOFTWARE.
 #include <IRremote.h>
 #include <LiquidCrystal.h>
 
-#define RECV_PIN	= 6;
-#define RELAY_PIN 	= 10;
-#define BUZZER 		= 9;
+#define RECV_PIN	6
+#define RELAY_PIN 	10
+#define BUZZER 		9
 
 int minit;
 int second;
@@ -267,4 +267,3 @@ void burst(){
   digitalWrite(10,HIGH);
   delay(100);  
 }
-
