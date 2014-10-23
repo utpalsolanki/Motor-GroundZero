@@ -28,9 +28,12 @@ SOFTWARE.
 #define RECV_PIN	6
 #define RELAY_PIN 	10
 #define BUZZER 		9
+#define trigPin         A0
+#define echoPin         A1
 
 int minit;
 int second;
+unsigned long int levelInterval;
 
 IRrecv irrecv(RECV_PIN);
 decode_results results;
@@ -47,6 +50,9 @@ void setup()
   pinMode(RELAY_PIN, OUTPUT);
   pinMode(13, OUTPUT);
   pinMode(BUZZER,OUTPUT);
+  
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
 
   digitalWrite(10,HIGH);
   digitalWrite(BUZZER,HIGH);
@@ -60,6 +66,7 @@ void setup()
   lcd.setCursor(0, 1);
   lcd.print("using Ch+ Ch- ");
 
+  levelInterval = millis();
   delay(2000);
   minit=0;
   second=0;
@@ -75,8 +82,84 @@ int on = 0;
 unsigned long last = millis();
 void loop() 
 {
- 
-  if(irrecv.decode(&results))
+   check_UART();
+   check_TSOP();
+   if((millis() - levelInterval) > 2000)
+   {
+     get_GLevel();
+     levelInterval = millis();
+   }
+
+}
+void check_UART()
+{
+  if(Serial.available()>0)
+  {
+    unsigned char readSignal = Serial.read();
+    if(readSignal=='>')
+    {
+      minit++;
+      time_display();
+      delay(100);
+      digitalWrite(BUZZER,LOW);
+      delay(50);
+      digitalWrite(BUZZER,HIGH);
+      Serial.print(minit);
+      Serial.println(" min");
+    }
+    else if(readSignal=='<')
+    {
+      minit--;
+      if(minit <= 0)
+        minit = 0;
+        
+      time_display();
+      delay(100);
+      digitalWrite(BUZZER,LOW);
+      delay(50);
+      digitalWrite(BUZZER,HIGH);      
+      Serial.print(minit);
+      Serial.println(" min");
+    }
+      
+    else if(readSignal=='^')
+    {
+      motor();      
+    }
+    else if(readSignal=='/')
+    {
+      turnMotorOn(); 
+    }
+    else if(readSignal=='\\')
+    {
+      turnMotorOff(); 
+    }
+    else if(readSignal=='[')
+    {
+
+    }
+    else if(readSignal==']')
+    {
+
+    }
+    else if(readSignal=='#')
+    {
+
+    }
+    else if(readSignal=='M')
+    {
+      turnMotorOff(); 
+    }
+    else
+    {
+      Serial.println("Unknown command");
+    }
+      
+  }   
+}
+void check_TSOP()
+{
+    if(irrecv.decode(&results))
   {
     if(results.value==0x208F7)
     {
@@ -180,34 +263,38 @@ void motor()
   digitalWrite(10,LOW);  // motor is now On , relay on
   delay(500);
   
-  Serial.println("Motor is now ON");
+  Serial.println("Motor ON");
   
   m1=minit-1;  // copying time value
   s1=second;
   
-    for(minit=m1;minit>0;minit--){
-       
-        for(second=59;second>=0;second--){
+    for(minit=m1;minit>0;minit--)
+    {
+      for(second=59;second>=0;second--)
+      {
           time_display_running();
+          check_UART();
           delay(1000);
-          
-        }
-        
-        
+      }  
     }
     
-     for(second=59;second>=0;second--){
-          time_display_running();
-          if(second>10){
-          delay(1000);
-          }
-          else{
-              digitalWrite(BUZZER,LOW);
-              delay(500);
-              digitalWrite(BUZZER,HIGH);
-              delay(500);     
-          }      
-        }
+    for(second=59;second>=0;second--)
+    {
+      time_display_running();
+      if(second>10)
+      {
+        delay(1000);
+        check_UART();
+      }
+      else
+      {
+          digitalWrite(BUZZER,LOW);
+          delay(500);
+          digitalWrite(BUZZER,HIGH);
+          delay(500);
+          check_UART();
+      }      
+    }
     
     
     
@@ -220,21 +307,17 @@ void motor()
     Serial.println("Motor OFF");
     
     digitalWrite(BUZZER,LOW);
-              delay(2000);
-              digitalWrite(BUZZER,HIGH);
-              
-    delay(6000);
+    delay(1500);
+    digitalWrite(BUZZER,HIGH);
+    delay(1000);
     
-  lcd.clear();  
-  lcd.print("Set your time");
-  lcd.setCursor(0, 1);
-  lcd.print("using Ch+ Ch- ");
-  delay(2000);
-  minit=0;
-  second=0;
-  //time_display();
-    
-    
+    lcd.clear();  
+    lcd.print("Set your time");
+    lcd.setCursor(0, 1);
+    lcd.print("using Ch+ Ch- ");
+    delay(2000);
+    minit=0;
+    second=0;
 }
 /***********************************************************************
 Function : Void burst
@@ -266,4 +349,34 @@ void burst(){
   delay(10);
   digitalWrite(10,HIGH);
   delay(100);  
+}
+void turnMotorOn()
+{
+  digitalWrite(10,LOW);
+  delay(100);  
+  Serial.println("Motor ON");
+}
+void turnMotorOff()
+{
+  burst();
+  delay(100);  
+  Serial.println("Motor OFF");
+}
+/***********************************************************************
+Function : get_Glevel
+***********************************************************************/
+void get_GLevel() 
+{
+  long duration, distance;
+  digitalWrite(trigPin, LOW);   // Added this line
+  delayMicroseconds(2);         // Added this line
+  digitalWrite(trigPin, HIGH);
+
+  delayMicroseconds(10);        // Added this line
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = (duration/2) / 29.1;
+ 
+  Serial.print(distance);
+  Serial.println(" cm");
 }
