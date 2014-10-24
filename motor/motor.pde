@@ -28,9 +28,22 @@ SOFTWARE.
 #define RECV_PIN	6
 #define RELAY_PIN 	10
 #define BUZZER 		9
-#define trigPin         A0
-#define echoPin         A1
+#define trigPinG         A0
+#define echoPinG         A1
+#define trigPinH         A2
+#define echoPinH         A3
 
+#define HIGHER_CUTOFF_H  12
+#define LOWER_CUTOFF_H   70
+#define HIGHER_CUTOFF_G  12
+#define LOWER_CUTOFF_G   70
+
+#define MOTOR_OFF        0
+#define MOTOR_ON_AUTO    1
+#define MOTOR_ON_TIMER   2
+#define MOTOR_ON_MANUAL  3
+
+int motorState;
 int minit;
 int second;
 unsigned long int levelInterval;
@@ -51,8 +64,10 @@ void setup()
   pinMode(13, OUTPUT);
   pinMode(BUZZER,OUTPUT);
   
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
+  pinMode(trigPinG, OUTPUT);
+  pinMode(echoPinG, INPUT);
+  pinMode(trigPinH, OUTPUT);
+  pinMode(echoPinH, INPUT);
 
   digitalWrite(10,HIGH);
   digitalWrite(BUZZER,HIGH);
@@ -73,7 +88,7 @@ void setup()
 
   time_display();
   Serial.println("System started");
-  
+  motorState = MOTOR_OFF;
 }
 /***********************************************************************
 Function : Void Loop
@@ -84,12 +99,6 @@ void loop()
 {
    check_UART();
    check_TSOP();
-   if((millis() - levelInterval) > 2000)
-   {
-     get_GLevel();
-     levelInterval = millis();
-   }
-
 }
 void check_UART()
 {
@@ -124,31 +133,65 @@ void check_UART()
       
     else if(readSignal=='^')
     {
-      motor();      
+      if(motorState == MOTOR_OFF)
+      {
+        motor();      
+      }
     }
     else if(readSignal=='/')
     {
-      turnMotorOn(); 
+      if(motorState == MOTOR_OFF)
+      {
+        motorState = MOTOR_ON_MANUAL;
+        turnMotorOn(); 
+      }
+      else
+      {
+        Serial.println("Motor already ON");
+      }
     }
     else if(readSignal=='\\')
     {
-      turnMotorOff(); 
+      if(motorState != MOTOR_OFF)
+      {
+        motorState = MOTOR_OFF;
+        turnMotorOff(); 
+      }
+      else
+      {
+        Serial.println("Motor already OFF");
+      }
     }
     else if(readSignal=='[')
     {
-
+      //get_GLevel();
+      Serial.print(avgGLevel());
+      Serial.println(" cm");
     }
     else if(readSignal==']')
     {
-
+      //get_HLevel();
+      Serial.print(avgHLevel());
+      Serial.println(" cm");
+    }
+    else if(readSignal=='T')
+    {
+      Serial.println(millis());
     }
     else if(readSignal=='#')
     {
-
+      if(motorState==MOTOR_OFF)
+      {
+        run_Auto();
+      }
+      else
+      {
+        Serial.println("Motor already ON");
+      }
     }
     else if(readSignal=='M')
     {
-      turnMotorOff(); 
+      giveMotorStatus();
     }
     else
     {
@@ -264,6 +307,7 @@ void motor()
   delay(500);
   
   Serial.println("Motor ON");
+  motorState = MOTOR_ON_TIMER;
   
   m1=minit-1;  // copying time value
   s1=second;
@@ -274,6 +318,8 @@ void motor()
       {
           time_display_running();
           check_UART();
+          if(motorState == MOTOR_OFF)
+            return;
           delay(1000);
       }  
     }
@@ -285,6 +331,8 @@ void motor()
       {
         delay(1000);
         check_UART();
+        if(motorState == MOTOR_OFF)
+          return;
       }
       else
       {
@@ -293,6 +341,8 @@ void motor()
           digitalWrite(BUZZER,HIGH);
           delay(500);
           check_UART();
+          if(motorState == MOTOR_OFF)
+            return;
       }      
     }
     
@@ -322,15 +372,7 @@ void motor()
 /***********************************************************************
 Function : Void burst
 ***********************************************************************/
-void burst(){
-  digitalWrite(10,HIGH);
-  delay(10);
-  digitalWrite(10,LOW);
-  delay(10);
-  digitalWrite(10,HIGH);
-  delay(10);
-  digitalWrite(10,LOW);
-  delay(10);
+void burst(){  
   digitalWrite(10,HIGH);
   delay(10);
   digitalWrite(10,LOW);
@@ -349,15 +391,44 @@ void burst(){
   delay(10);
   digitalWrite(10,HIGH);
   delay(100);  
+  
+  motorState = MOTOR_OFF;
 }
 void turnMotorOn()
 {
+  digitalWrite(BUZZER,LOW);
+  delay(200);
+  digitalWrite(BUZZER,HIGH);
+  delay(200);
+  digitalWrite(BUZZER,LOW);
+  delay(200);
+  digitalWrite(BUZZER,HIGH);
+  delay(200);
+  
   digitalWrite(10,LOW);
   delay(100);  
   Serial.println("Motor ON");
 }
 void turnMotorOff()
 {
+  digitalWrite(BUZZER,LOW);
+  delay(200);
+  digitalWrite(BUZZER,HIGH);
+  delay(200);
+  digitalWrite(BUZZER,LOW);
+  delay(200);
+  digitalWrite(BUZZER,HIGH);
+  delay(200);
+
+  digitalWrite(BUZZER,LOW);
+  delay(200);
+  digitalWrite(BUZZER,HIGH);
+  delay(200);
+  digitalWrite(BUZZER,LOW);
+  delay(200);
+  digitalWrite(BUZZER,HIGH);
+  delay(200);
+
   burst();
   delay(100);  
   Serial.println("Motor OFF");
@@ -368,15 +439,158 @@ Function : get_Glevel
 void get_GLevel() 
 {
   long duration, distance;
-  digitalWrite(trigPin, LOW);   // Added this line
+  digitalWrite(trigPinG, LOW);   // Added this line
   delayMicroseconds(2);         // Added this line
-  digitalWrite(trigPin, HIGH);
+  digitalWrite(trigPinG, HIGH);
 
   delayMicroseconds(10);        // Added this line
-  digitalWrite(trigPin, LOW);
-  duration = pulseIn(echoPin, HIGH);
+  digitalWrite(trigPinG, LOW);
+  duration = pulseIn(echoPinG, HIGH);
   distance = (duration/2) / 29.1;
  
   Serial.print(distance);
   Serial.println(" cm");
+}
+/***********************************************************************
+Function : get_Glevel
+***********************************************************************/
+void get_HLevel() 
+{
+  long duration, distance;
+  digitalWrite(trigPinH, LOW);   // Added this line
+  delayMicroseconds(2);         // Added this line
+  digitalWrite(trigPinH, HIGH);
+
+  delayMicroseconds(10);        // Added this line
+  digitalWrite(trigPinH, LOW);
+  duration = pulseIn(echoPinH, HIGH);
+  distance = (duration/2) / 29.1;
+ 
+  Serial.print(distance);
+  Serial.println(" cm");
+}
+/***********************************************************************
+Function : get_Glevel
+***********************************************************************/
+long ret_GLevel() 
+{
+  long duration, distance;
+  digitalWrite(trigPinG, LOW);   // Added this line
+  delayMicroseconds(2);         // Added this line
+  digitalWrite(trigPinG, HIGH);
+
+  delayMicroseconds(10);        // Added this line
+  digitalWrite(trigPinG, LOW);
+  duration = pulseIn(echoPinG, HIGH);
+  distance = (duration/2) / 29.1;
+  
+  return distance; 
+}
+/***********************************************************************
+Function : get_Glevel
+***********************************************************************/
+long ret_HLevel() 
+{
+  long duration, distance;
+  digitalWrite(trigPinH, LOW);   // Added this line
+  delayMicroseconds(2);         // Added this line
+  digitalWrite(trigPinH, HIGH);
+
+  delayMicroseconds(10);        // Added this line
+  digitalWrite(trigPinH, LOW);
+  duration = pulseIn(echoPinH, HIGH);
+  distance = (duration/2) / 29.1;
+ 
+  return distance;
+}
+/***********************************************************************
+Function : ret_Glevel_avg
+***********************************************************************/
+long avgGLevel()
+{
+  long take1,take2,take3;
+  take1 = ret_GLevel();
+  delay(200);
+  take2 = ret_GLevel();
+  delay(200);
+  take3 = ret_GLevel();
+
+  return long(((take1 + take2 + take3)/3));
+}
+/***********************************************************************
+Function : ret_Hlevel_avg
+***********************************************************************/
+long avgHLevel()
+{
+  long take1,take2,take3;
+  take1 = ret_HLevel();
+  delay(200);
+  take2 = ret_HLevel();
+  delay(200);
+  take3 = ret_HLevel();
+
+  return long(((take1 + take2 + take3)/3));
+
+}
+/***********************************************************************
+Function : run_Auto()
+***********************************************************************/
+void run_Auto()
+{
+  Serial.println("Auto Started");
+  if((avgHLevel() > HIGHER_CUTOFF_H)  &&  (avgGLevel() < LOWER_CUTOFF_G))
+  {
+    turnMotorOn();
+    motorState=MOTOR_ON_AUTO;
+    unsigned long auto_max_interval = millis();
+    
+    while((avgHLevel() > HIGHER_CUTOFF_H)  &&  (avgGLevel() < LOWER_CUTOFF_G))
+    {
+      check_UART();
+      if(motorState == MOTOR_OFF)
+      {
+        Serial.println("Auto abort");
+        return;
+      }
+      if(millis() - auto_max_interval > (60000*20))
+      {
+        Serial.println("Auto timedout");
+        break;
+      }
+      delay(1000);
+    }
+    turnMotorOff();
+    motorState=MOTOR_OFF;
+    Serial.println("Auto finish");
+  }
+  else
+  {
+    Serial.println("Auto level error");
+    return;
+  }
+  
+}
+/***********************************************************************
+Function : run_Auto()
+***********************************************************************/
+void giveMotorStatus()
+{
+  switch(motorState) 
+  {
+    case MOTOR_OFF:
+      Serial.println("Motor OFF");
+      break;
+    case MOTOR_ON_AUTO:
+      Serial.println("Motor AUTO-ON");
+      break;
+    case MOTOR_ON_TIMER:
+      Serial.println("Motor TIMER-ON");
+      break;
+    case MOTOR_ON_MANUAL:
+      Serial.println("Motor MANUAL-ON");
+      break;
+    default:
+      Serial.println("Motor UNKNOWN");
+      break;
+  }
 }
