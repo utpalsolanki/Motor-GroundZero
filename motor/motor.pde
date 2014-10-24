@@ -34,9 +34,9 @@ SOFTWARE.
 #define echoPinH         A3
 
 #define HIGHER_CUTOFF_H  12
-#define LOWER_CUTOFF_H   70
+#define LOWER_CUTOFF_H   58
 #define HIGHER_CUTOFF_G  12
-#define LOWER_CUTOFF_G   70
+#define LOWER_CUTOFF_G   58
 
 #define MOTOR_OFF        0
 #define MOTOR_ON_AUTO    1
